@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+._*
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.sublime-workspace
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Local config and secrets
+.env
+.env.*
+*.local
+
+# Logs and temporary files
+*.log
+*.tmp
