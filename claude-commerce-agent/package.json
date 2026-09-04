@@ -1,0 +1,6 @@
+{
+  "name": "claude-commerce-agent",
+  "private": true,
+  "workspaces": ["vendor/web-shared", "storefront/web", "merchant/web"],
+  "scripts": { "build": "npm run build --workspaces --if-present" }
+}

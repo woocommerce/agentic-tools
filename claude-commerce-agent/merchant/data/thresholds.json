@@ -1,0 +1,9 @@
+{
+  "_comment": "Tunable inputs to api/alerts.py. Keeping them in a file means any threshold the assistant cites was chosen by a person, not hard-coded. Low-stock lookup order: slug match, then category match, then the WOOCOMMERCE_LOW_STOCK_DEFAULT environment variable.",
+  "low_stock_by_category": {"Workshop tools": 8, "Storage": 5},
+  "low_stock_by_slug": {"bench-dog-set": 6},
+  "slow_mover_max_units_30d": 2,
+  "slow_mover_min_stock": 12,
+  "return_spike_pct": 20.0,
+  "return_spike_min_units": 4
+}

@@ -1,0 +1,58 @@
+/*
+ * Copyright 2026 Automattic Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Adapted from Anthropic's retail merchant portal example (Apache-2.0).
+ */
+
+@import "tailwindcss";
+@source "../../../vendor/web-shared";
+@import "../../../vendor/web-shared/portal/portal.css";
+
+/*
+ * WooCommerce merchant design system: a cool off-white ground, white cards, navy ink and
+ * structure, terracotta for the assistant and approvals, WooCommerce purple on the store
+ * mark only, tabular numerals on data.
+ */
+
+:root {
+  --ground: #f4f5f8; /* page */
+  --surface: #ffffff; /* text on ink */
+  --card: #ffffff; /* cards, sidebar, rail */
+  --chrome: #ffffff; /* sidebar and mobile bar */
+  --well: #eef1f5; /* chips, thumbs, hover ground */
+  --ink: #1e2c4f; /* navy: text and structure */
+  --ink-2: #3b4763; /* secondary text that still reads as content */
+  --ink-soft: #66708a; /* labels and metadata */
+  --ink-faint: #9aa2b5; /* hints and placeholders */
+  --line: rgba(30, 44, 79, 0.1);
+  --line-strong: rgba(30, 44, 79, 0.17); /* control borders */
+  --accent: #d97f5f; /* terracotta: the assistant's mark, hover, focus */
+  --accent-strong: #c4643f; /* approve buttons */
+  --accent-soft: #faece5;
+  --accent-ink: #8a3f22; /* text on accent-soft */
+  --on-accent: #ffffff; /* text on accent and accent-strong */
+  --brand: #7f54b3; /* WooCommerce purple, on the store mark only */
+  --ok: #1f8f5f; /* positive change, applied */
+  --ok-soft: #e3f4ec;
+  --warn: #b06a00; /* low stock, results held by a safety gate */
+  --warn-soft: #fdf1da;
+  --danger: #c9252d; /* errors, sold out, negative change */
+  --danger-soft: #fce9ea;
+  --info: #2c6fa8; /* buyer messages, shipped */
+  --info-soft: #e5f0fa;
+  --violet: #6b4fd6; /* awaiting approval, quoted-as-data */
+  --violet-soft: #eeeafd;
+  --shadow-sm: 0 1px 2px rgba(30, 44, 79, 0.06), 0 1px 1px rgba(30, 44, 79, 0.04);
+  --shadow: 0 1px 2px rgba(30, 44, 79, 0.06), 0 4px 14px -6px rgba(30, 44, 79, 0.14);
+  --shadow-lg: 0 12px 40px -12px rgba(30, 44, 79, 0.28), 0 2px 6px rgba(30, 44, 79, 0.08);
+  --radius: 12px;
+}
+
+body {
+  font-family:
+    var(--font-body), "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}

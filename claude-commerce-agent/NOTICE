@@ -1,0 +1,21 @@
+Claude commerce agent for WooCommerce
+Copyright 2026 Automattic Inc.
+
+This repository builds on Anthropic's commerce-agents reference implementation
+(https://github.com/anthropics/commerce-agents), licensed under the Apache License,
+Version 2.0.
+
+- vendor/demo_common/, vendor/web-shared/, and vendor/skills/ are copied from that
+  repository at the commit requirements.txt pins, with one small local edit: the
+  .env hints in vendor/demo_common/merchant.py and storefront.py omit the examples/ path
+  prefix used upstream, since this repository has no such directory. Copyright 2026
+  Anthropic PBC.
+- The reference's core packages (commerce-common, shopping-agent, merchant-agent) are not
+  included here; requirements.txt installs them from Anthropic's repository at a pinned
+  commit.
+- storefront/web/ and merchant/web/ are adapted from the retail example web apps in
+  Anthropic's commerce-agents repository, Copyright 2026 Anthropic PBC, Apache License
+  2.0, with changes authored by Automattic.
+- storefront/api/, merchant/api/, merchant/scripts/, merchant/data/, storefront/scripts/,
+  wordpress/, and vendor/pyproject.toml are authored by Automattic.
+  Copyright 2026 Automattic Inc.
