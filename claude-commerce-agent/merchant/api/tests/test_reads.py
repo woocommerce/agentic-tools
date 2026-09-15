@@ -215,8 +215,26 @@ async def test_order_issues_cover_all_three_kinds(backend, session) -> None:
     assert by_kind["return_spike"].listing_id == BENCH_DOGS
 
 
-async def test_campaign_read_refuses_with_the_reason(backend, session) -> None:
-    with pytest.raises(ChangeNotApplicable, match="no campaign object"):
+async def test_campaigns_are_read_from_the_marketing_extensions(backend, session) -> None:
+    campaigns = await backend.get_campaign_performance(session, None)
+    by_id = {entry.campaign_id: entry for entry in campaigns}
+    assert set(by_id) == {"email-spring-bench", "ads-workshop-tools"}
+    ads = by_id["ads-workshop-tools"]
+    assert (ads.channel, ads.status, ads.currency) == ("ads", "active", "USD")
+    assert (ads.spend, ads.revenue) == (84.5, 431.0)
+    email = by_id["email-spring-bench"]
+    assert email.spend is None  # the channel reports no cost; never a stand-in zero
+    assert email.revenue == 312.0
+    assert email.budget == 0.0  # no source in WooCommerce; the merchant context says so
+    only = await backend.get_campaign_performance(session, "ads-workshop-tools")
+    assert [entry.campaign_id for entry in only] == ["ads-workshop-tools"]
+
+
+async def test_a_store_with_no_marketing_extension_lists_no_campaigns(
+    backend, session, store
+) -> None:
+    store.campaigns = []
+    with pytest.raises(ChangeNotApplicable, match="lists no campaigns"):
         await backend.get_campaign_performance(session, None)
 
 

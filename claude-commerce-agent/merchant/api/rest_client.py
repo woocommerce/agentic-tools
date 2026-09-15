@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 WC_V3 = "wc/v3"
 WC_ANALYTICS = "wc-analytics"
+WC_ADMIN = "wc-admin"
 
 _REQUEST_TIMEOUT_S = 30.0
 _RETRY_AFTER_CAP_S = 30.0
@@ -91,6 +92,7 @@ class Routes:
     reviews = f"{WC_V3}/products/reviews"
     orders = f"{WC_V3}/orders"
     revenue_stats = f"{WC_ANALYTICS}/reports/revenue/stats"
+    marketing_campaigns = f"{WC_ADMIN}/marketing/campaigns"
 
     @staticmethod
     def product(product_id: str | int) -> str:

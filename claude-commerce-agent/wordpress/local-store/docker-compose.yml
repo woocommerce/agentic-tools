@@ -45,7 +45,7 @@ services:
          * accepts the same credential a real store would over HTTPS. The Store API and
          * the front end are left alone, so the URLs they render stay http://.
          */
-        if (preg_match('#^/wp-json/(wc/v3|wc-analytics)/#', $$_SERVER['REQUEST_URI'] ?? '')) {
+        if (preg_match('#^/wp-json/(wc/v3|wc-analytics|wc-admin)/#', $$_SERVER['REQUEST_URI'] ?? '')) {
             $$_SERVER['HTTPS'] = 'on';
         }
     volumes:

@@ -266,6 +266,29 @@ def order_node(
     }
 
 
+# What ``wc-admin/marketing/campaigns`` returns on a store with marketing extensions
+# installed: each extension registers as a channel and supplies its own campaigns, and core
+# only lists them. Two here, on an email channel and an ads channel, carrying the figures a
+# channel reports (``cost``, ``sales``) and nothing for the ones core has no field for.
+# ``campaigns = []`` is the store with no marketing extension at all.
+CAMPAIGNS = [
+    {
+        "id": "email-spring-bench",
+        "channel": "email",
+        "title": "Spring bench refresh",
+        "manage_url": f"{DEFAULT_STORE_URL}/wp-admin/admin.php?page=email-campaigns",
+        "sales": {"value": "312.00", "currency": CURRENCY, "formatted": "$312.00"},
+    },
+    {
+        "id": "ads-workshop-tools",
+        "channel": "ads",
+        "title": "Workshop tools shopping ads",
+        "manage_url": f"{DEFAULT_STORE_URL}/wp-admin/admin.php?page=ads-campaigns",
+        "cost": {"value": "84.50", "currency": CURRENCY, "formatted": "$84.50"},
+        "sales": {"value": "431.00", "currency": CURRENCY, "formatted": "$431.00"},
+    },
+]
+
 REVIEWS = [
     {
         "id": 1,
@@ -511,6 +534,7 @@ class LocalStore:
     store_name: str = DEFAULT_STORE_NAME
     store_url: str = DEFAULT_STORE_URL
     reviews: list[dict[str, Any]] = field(default_factory=lambda: [dict(r) for r in REVIEWS])
+    campaigns: list[dict[str, Any]] = field(default_factory=lambda: [dict(c) for c in CAMPAIGNS])
     # Log of every write as ``(method, path, body)``, for the smoke script and the tests.
     applied: list[tuple[str, str, Any]] = field(default_factory=list)
     _next_id: int = FIRST_CREATED_ID - 1
@@ -570,6 +594,7 @@ class LocalStore:
             (re.compile(r"wc/v3/orders/(\d+)"), self._order_item),
             (re.compile(r"wc/v3/orders/(\d+)/refunds"), self._refunds),
             (re.compile(r"wc-analytics/reports/revenue/stats"), self._revenue_stats),
+            (re.compile(r"wc-admin/marketing/campaigns"), self._campaigns),
         ]
 
     def _record(self, method: str, path: str, body: Any) -> None:
@@ -596,6 +621,7 @@ class LocalStore:
                     "wc/v3",
                     "wc/store/v1",
                     "wc-analytics",
+                    "wc-admin",
                     "claude-commerce/v1",
                 ],
                 "site_logo": 0,
@@ -636,6 +662,12 @@ class LocalStore:
         if slug := params.get("slug"):
             terms = [t for t in terms if t["slug"] == slug]
         return _page(terms, params)
+
+    def _campaigns(self, method: str, params: dict, body: Any) -> Payload:
+        """The marketing campaigns collection, paged like core's: read-only."""
+        if method != "GET":
+            raise _NoRoute
+        return _page(self.campaigns, params)
 
     def _reviews(self, method: str, params: dict, body: Any) -> Payload:
         if method != "GET":

@@ -158,7 +158,8 @@ into the transport; the model, the routes, and the logs never see it.
 Four of the reference's five merchant flows map onto WooCommerce objects: prices
 (`regular_price` on a product or variation), listing content, stock and status, and
 promotions, which WooCommerce models natively as a scheduled `sale_price`. Campaigns are
-switched off in the config because WooCommerce core has nothing to represent them.
+read-only: WooCommerce lists what the store's marketing extensions report and has no API to
+create one, so a campaign draft is refused with that reason.
 
 ## Layout
 

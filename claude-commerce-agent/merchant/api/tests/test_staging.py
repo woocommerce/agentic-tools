@@ -14,6 +14,7 @@ from typing import Any
 import pytest
 from merchant_agent import (
     ActorKind,
+    CampaignDraft,
     ChangeStatus,
     InventoryActionItem,
     PriceUpdateItem,
@@ -376,9 +377,17 @@ async def test_pause_still_applies_when_the_listing_status_moved(backend, sessio
 # -- Campaigns and discard --------------------------------------------------------------
 
 
-def test_campaign_tools_are_switched_off(config) -> None:
-    assert config.enable_campaigns is False
-    assert {"stage_campaign", "get_campaign_performance"} <= set(config.absent_tools())
+def test_campaign_tools_stay_on(config) -> None:
+    assert config.enable_campaigns is True
+    assert {"stage_campaign", "get_campaign_performance"}.isdisjoint(config.absent_tools())
+
+
+async def test_a_campaign_draft_is_refused_because_woocommerce_cannot_write_one(
+    backend, session, store
+) -> None:
+    with pytest.raises(ChangeNotApplicable, match="no API to write"):
+        await backend.stage_campaign(session, CampaignDraft(name="Bench week", budget=200.0))
+    assert store.applied == []
 
 
 async def test_discard_records_who_and_what_kind(backend, session) -> None:

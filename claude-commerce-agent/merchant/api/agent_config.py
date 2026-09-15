@@ -137,15 +137,15 @@ def load_settings() -> WooSettings:
 
 
 def build_merchant_config(store_name: str) -> MerchantAgentConfig:
-    """Guardrail and approval configuration for this deployment. ``enable_campaigns`` is
-    False because WooCommerce core has no campaign entity (marketing extensions provide
-    their own), so the campaign tools are dropped from the tool list instead of being
-    offered and then refused. ``enable_analysis`` is False because there is no SQL endpoint
-    for ``execute_analysis_query`` to run against."""
+    """Guardrail and approval configuration for this deployment. ``enable_campaigns`` stays
+    on: the store lists its marketing extensions' campaigns through ``wc-admin``, so the
+    read tool has something to return, and ``stage_campaign`` refuses with the reason
+    (WooCommerce has no API to create one). ``enable_analysis`` is False because there is
+    no SQL endpoint for ``execute_analysis_query`` to run against."""
     return MerchantAgentConfig(
         brand_name=store_name,
         approval_surface="the Approve button on the staged change card",
         require_host_approval=host_approval_default(),
         enable_analysis=False,
-        enable_campaigns=False,
+        enable_campaigns=True,
     )
