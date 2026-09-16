@@ -76,13 +76,13 @@ For a site of your own:
    `WOOCOMMERCE_CONSUMER_SECRET`.
 
 WooCommerce only honours HTTP Basic authentication over TLS. The Docker site flags its
-`wc/v3` and `wc-analytics` routes as SSL-equivalent so that plain `http://localhost` works
-during development; a production site should be on HTTPS.
+`wc/v3`, `wc-analytics`, and `wc-admin` routes as SSL-equivalent so that plain
+`http://localhost` works during development; a production site should be on HTTPS.
 
 | Requirement | Why |
 |---|---|
 | Key permission `read_write` | Needed for `PUT` writes; `read` suffices for reads only |
-| `manage_woocommerce` capability | Products, variations, orders, refunds and reviews endpoints |
+| `manage_woocommerce` capability | Products, variations, orders, refunds and reviews endpoints, and the `wc-admin` marketing campaigns list |
 | `view_woocommerce_reports` capability | The `wc-analytics` revenue report. If the user lacks it (or `WOOCOMMERCE_DISABLE_ANALYTICS=1` is set) every metric is computed from the trailing order scan instead |
 
 Treat the consumer secret like an admin password: it can edit the whole store. Only
@@ -166,7 +166,10 @@ fabricates:
 - **Promotions** become scheduled sale prices (`sale_price` with `date_on_sale_from`/`to`).
   A negative discount — a temporary price rise — has no scheduled equivalent and is
   refused.
-- **Campaigns** are disabled in the agent config. WooCommerce core has no campaign entity.
+- **Campaigns** are read-only. `wc-admin/marketing/campaigns` lists the campaigns the
+  store's marketing extensions report (core has none of its own), with spend and sales
+  where the channel supplies them and no budget, dates, or status. WooCommerce has no API
+  to create one, so `stage_campaign` refuses and says why.
 - **`buyer_message` issues** are the `customer_note` field shoppers fill in at checkout,
   surfaced for orders still in `processing`.
 

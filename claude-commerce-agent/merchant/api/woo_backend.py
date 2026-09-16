@@ -23,8 +23,9 @@ mapping to what the store actually records instead of filling the gap with a gue
 - ``unit_cost`` is read from WooCommerce's cost-of-goods data when the store has it;
   otherwise margins are None instead of estimated.
 - Traffic and conversion are None. WooCommerce core keeps no session data.
-- Campaign tools are removed via ``enable_campaigns=False`` because WooCommerce core has
-  no campaign entity; the alternative would be tools that always refuse.
+- Campaigns are read-only. ``wc-admin/marketing/campaigns`` lists what the store's
+  marketing extensions report (core has no campaigns of its own), and WooCommerce has no
+  API to create one, so ``stage_campaign`` refuses and says why.
 - ``execute_analysis_query`` is left at the base class default: no SQL surface is exposed.
 """
 
@@ -68,7 +69,7 @@ from .alerts import AlertBuilder, AlertRules
 from .catalog import CatalogCache, ListingTarget, strip_html
 from .metrics import TRAFFIC_NOTE, MetricsSource, resolve_period
 from .orders import DayRow, OrderScan, daily_rows
-from .rest_client import Routes, WooApiError, WooExecutor
+from .rest_client import Routes, WooApiError, WooExecutor, paged
 from .staging import (
     LISTING_FIELDS,
     PRICE_FIELD,
@@ -80,8 +81,17 @@ from .staging import (
 )
 
 NO_CAMPAIGNS = (
-    "WooCommerce core has no campaign object; campaigns belong to marketing extensions, "
-    "which this deployment does not read"
+    "this store lists no campaigns: WooCommerce shows only the campaigns its installed "
+    "marketing extensions report, and none reports any"
+)
+CAMPAIGNS_READ_ONLY = (
+    "campaigns are read from the store's marketing extensions and cannot be created or "
+    "changed here; WooCommerce has no API to write one"
+)
+# At most 140 characters: it travels as a DataLimitation note.
+CAMPAIGN_FIGURES = (
+    "campaigns are read-only, from installed marketing extensions; budget, dates, and status "
+    "are not reported, so budget reads 0"
 )
 SALES_WINDOW_DAYS = 30
 DEMAND_WINDOW_DAYS = 14
@@ -392,7 +402,25 @@ class WooMerchantBackend(MerchantBackend):
     async def get_campaign_performance(
         self, session: MerchantSessionContext, campaign_id: str | None = None
     ) -> list[Campaign]:
-        raise ChangeNotApplicable(f"campaign performance cannot be read: {NO_CAMPAIGNS}")
+        """The campaigns the store's marketing extensions report through
+        ``wc-admin/marketing/campaigns``. Core only lists them: a store with no marketing
+        extension lists none, which is reported as an absence rather than as an empty
+        result, because "no campaigns" and "no campaign data" lead to different advice."""
+        currency = await self.currency()
+        try:
+            rows = await paged(
+                self._executor, Routes.marketing_campaigns, per_page=100, max_items=100
+            )
+        except WooApiError as error:
+            raise ChangeNotApplicable(
+                f"campaigns cannot be read: the store refused the marketing campaigns route ({error})"
+            ) from error
+        campaigns = [campaign_from_node(row, currency) for row in rows if isinstance(row, dict)]
+        if not campaigns:
+            raise ChangeNotApplicable(NO_CAMPAIGNS)
+        if campaign_id:
+            return [entry for entry in campaigns if entry.campaign_id == campaign_id]
+        return campaigns
 
     # -- Catalog -----------------------------------------------------------------------
 
@@ -790,7 +818,7 @@ class WooMerchantBackend(MerchantBackend):
     async def stage_campaign(
         self, session: MerchantSessionContext, campaign: CampaignDraft
     ) -> StagedChange:
-        raise ChangeNotApplicable(f"campaign staging is not supported here: {NO_CAMPAIGNS}")
+        raise ChangeNotApplicable(CAMPAIGNS_READ_ONLY)
 
     # -- Change lifecycle -------------------------------------------------------------------
 
@@ -856,7 +884,7 @@ class WooMerchantBackend(MerchantBackend):
                 source="orders",
                 note=f"orders are scanned {window} days back; periods before that return no data",
             ),
-            DataLimitation(source="campaigns", note=NO_CAMPAIGNS[:140]),
+            DataLimitation(source="campaigns", note=CAMPAIGN_FIGURES),
         ]
 
     async def get_merchant_context(self, session: MerchantSessionContext) -> dict[str, Any] | None:
@@ -920,3 +948,35 @@ class WooMerchantBackend(MerchantBackend):
 def _day_of(stamp: str | None) -> str | None:
     """The ``YYYY-MM-DD`` part of a WooCommerce timestamp, or None."""
     return (stamp or "")[:10] or None
+
+
+def _amount(money: Any) -> float | None:
+    """A ``{"value", "currency", "formatted"}`` price block as a float, or None when the
+    channel supplied none. Absent is absent: never a stand-in zero."""
+    if not isinstance(money, dict):
+        return None
+    try:
+        return round(float(money.get("value")), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def campaign_from_node(node: dict[str, Any], currency: str) -> Campaign:
+    """One ``wc-admin/marketing/campaigns`` row as the interface's ``Campaign``. Core exposes
+    an id, the channel's slug, a title, a manage URL, and, where the channel reports them,
+    ``cost`` and ``sales``. It has no budget, status, or dates. Spend and revenue are None
+    when absent; budget is required by the interface and has no source, so it reads 0 and
+    the merchant context says why; status is ``active`` because a channel lists only the
+    campaigns it currently runs."""
+    cost = node.get("cost") if isinstance(node.get("cost"), dict) else None
+    sales = node.get("sales") if isinstance(node.get("sales"), dict) else None
+    return Campaign(
+        campaign_id=str(node.get("id")),
+        name=str(node.get("title") or node.get("id")),
+        status="active",
+        channel=str(node.get("channel") or "") or None,
+        budget=0.0,
+        spend=_amount(cost),
+        revenue=_amount(sales),
+        currency=str((cost or sales or {}).get("currency") or currency),
+    )

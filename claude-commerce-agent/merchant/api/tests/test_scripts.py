@@ -149,14 +149,12 @@ def test_dry_run_flag_exits_cleanly(seeder, capsys) -> None:
 # -- smoke_live -------------------------------------------------------------------------
 
 
-async def test_smoke_reads_pass_and_only_campaigns_are_skipped(
-    smoke, backend, config, session, store
-) -> None:
+async def test_smoke_reads_all_pass(smoke, backend, config, session, store) -> None:
     await backend.warm()
     run = smoke.SmokeRun(backend, config, session, read_only=True)
     await run.reads()
     assert run.checks.failed == []
-    assert run.checks.skipped == ["get_campaign_performance"]
+    assert run.checks.skipped == []
     assert store.applied == []
 
 

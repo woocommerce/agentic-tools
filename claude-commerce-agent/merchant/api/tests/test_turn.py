@@ -70,6 +70,14 @@ def apply(change_id: str):
     return tool_use_message("apply_change", {"change_id": change_id})
 
 
+def campaigns():
+    return tool_use_message("get_campaign_performance", {})
+
+
+def draft_campaign(name: str, budget: float):
+    return tool_use_message("stage_campaign", {"name": name, "budget": budget})
+
+
 # -- The turn and what it left behind ---------------------------------------------------
 
 
@@ -144,20 +152,38 @@ async def test_request_context_states_sources_and_limits(turn) -> None:
         "WooCommerce Analytics",
         "records no sessions",
         '"order_history_days": 60',
-        "no campaign object",
+        "campaigns are read-only",
     ):
         assert expected in context
 
 
-async def test_campaign_tools_are_not_offered(turn) -> None:
+async def test_every_tool_the_store_supports_is_offered(turn) -> None:
     done = await turn("Hello", reply("Ask away."))
-    assert done.tool_names.isdisjoint({"stage_campaign", "get_campaign_performance"})
     assert {
+        "get_campaign_performance",
+        "stage_campaign",
         "stage_price_update",
         "stage_promotion",
         "stage_inventory_action",
         "apply_change",
     } <= done.tool_names
+
+
+async def test_campaigns_reach_the_model_with_their_figures(turn) -> None:
+    done = await turn("How are my campaigns doing?", campaigns(), reply("Two running."))
+    assert "Spring bench refresh" in done.fed_back
+    assert "431.0" in done.fed_back  # the ads channel's reported sales
+    assert "<merchant_data>" in done.fed_back  # extension-authored titles arrive fenced
+
+
+async def test_a_campaign_draft_is_refused_with_the_reason(turn, store) -> None:
+    done = await turn(
+        "Draft a campaign for the bench dogs",
+        draft_campaign("Bench week", 200.0),
+        reply("I can't create one from here."),
+    )
+    assert "no API to write one" in done.fed_back
+    assert store.applied == []
 
 
 async def test_static_prompt_is_byte_identical_between_calls(turn) -> None:
