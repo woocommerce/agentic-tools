@@ -279,7 +279,16 @@ function handoff(): void {
 			(int) $line['product_id'],
 			max( 1, (int) ( $line['quantity'] ?? 1 ) ),
 			(int) ( $line['variation_id'] ?? 0 ),
-			is_array( $line['variation'] ?? null ) ? $line['variation'] : array()
+			is_array( $line['variation'] ?? null ) ? $line['variation'] : array(),
+			/**
+			 * Cart item data to re-add an agent cart line with. Extensions that store their own
+			 * data on a line (product add-ons, configured products) return it here, or the line
+			 * is re-added as the bare product at its base price.
+			 *
+			 * @param array $cart_item_data Cart item data. Default empty.
+			 * @param array $line           The line as stored in the agent's session.
+			 */
+			(array) apply_filters( 'claude_commerce_handoff_cart_item_data', array(), $line )
 		);
 		if ( ! $added ) {
 			++$missed;
